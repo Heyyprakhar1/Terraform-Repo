@@ -1,0 +1,1 @@
+  after writing the .tf script, 1st command to fire is **terraform init**  > **terraform validate**(optional in nature) > **terraform plan** > **terraform apply**   > **terraform apply/destroy -auto-approve**(optional in nature).
