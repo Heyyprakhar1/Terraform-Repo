@@ -1,0 +1,67 @@
+# key-pair-generation
+resource "aws_key_pair" "intellipaat_key" {
+  key_name   = "intellipaat-ki-key"
+  public_key = file("intellipaat-ki-key.pub")
+}
+
+# default-vpc-creation
+resource "aws_default_vpc" "intellipaat_vpc" {
+  tags = {
+    Name = "intellipaat-vpc"
+  }
+}
+
+# security-group-creation
+resource "aws_security_group" "intellipaat_sg" {
+  name        = "intellipaat-sg"
+  description = "This is an automated security group"
+  vpc_id      = aws_default_vpc.intellipaat_vpc.id  # ✅ FIXED: Correct resource name and attribute
+
+  # in-bound-rules
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "ssh for everyone"
+  }
+
+  ingress {
+    from_port   = 80  # ✅ FIXED: Added space after = 
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "http open for everyone"
+  }
+
+  # out-bound-rules
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "allow all out bound connections for everyone"
+  }
+
+  tags = {  # ✅ ADDED: Missing tags block
+    Name = "intellipaat-sg"
+  }
+}
+
+# ec2-instance-creation
+resource "aws_instance" "intellipaat_ec2" {
+  ami                    = "ami-0279a86684f669718"  # ✅ Verify this AMI exists in your region
+  instance_type          = "t2.micro"
+  count                  = 3
+  key_name               = aws_key_pair.intellipaat_key.key_name
+  vpc_security_group_ids = [aws_security_group.intellipaat_sg.id]
+  
+  tags = {
+    Name = "intellipaat-ec2-${count.index}"  # ✅ ADDED: Unique names for each instance
+  }
+
+  # ✅ ADDED: Explicit dependency to prevent timing issues
+  depends_on = [
+    aws_security_group.intellipaat_sg
+  ]
+}
